@@ -1,7 +1,6 @@
 # Bulk Renamer
 
-This program will search through all sub-folders in a given directory and to
-rename any files or folders that have invalid characters.
+This program will search through all sub-folders in a given directory and rename any files or folders that have invalid characters.
 
 ## Purpose
 
