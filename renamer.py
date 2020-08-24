@@ -15,27 +15,38 @@ import sys
 from datetime import datetime  # For generating the logfile
 
 
-def checkExtension(Name):
-    """Remove extension from filename
+def checkExtension(fName):
+    """Determine whether a given string ends with a specific file extension.
 
-    FLAGGED FOR IMPROVEMENT
+    If the input ends with an extension that is included in extList.txt, the
+    function will return the filename and the extension.
+
+    If the input has no file extension, or the extension is not included in
+    extList.txt, the function will return the original filename, and an empty
+    string.
+
+    >>> checkExtension("test.txt")
+    ('test', '.txt')
+    >>> checkExtension("test.dll")
+    ('test.dll', '')
+    >>> checkExtension("test")
+    ('test', '')
+
     """
 
-    # List of file extensions which this program searches for
-    extList = (
-        '.doc', '.docx', '.pdf', '.rtf', '.odt', '.ppt', '.pptx', '.ods',
-        '.xlr', '.xls', '.xlsx', '.txt', '.jpg', '.jpeg', '.png', '.gif',
-        '.tiff', '.svg', '.bmp', '.mp3', '.mpa', '.wav', '.ogg', '.mid', '.7z',
-        '.rar', '.zip', '.exe', '.mov', '.mp4', '.mkv', '.mpg', '.h264', '.avi'
-        )
+    # Import list of file extensions from extList.txt
+    with open("extList.txt", 'r') as extFile:
+        extList = extFile.read().split('\n')
 
-    # Check if extension exists
-    if Name.endswith(extList):
-        Name, Ext = os.path.splitext(Name)[0], os.path.splitext(Name)[1]
-        return Name, Ext
+    # Determine whether filename has a listed extension
+    if fName.endswith(tuple(extList)):
+        fName, fExt = os.path.splitext(fName)[0], os.path.splitext(fName)[1]
+        return fName, fExt
 
     else:
-        return False
+        fExt = ""
+
+    return fName, fExt
 
 
 def checkRestricted(Name):
@@ -163,19 +174,13 @@ def main():
 
     for root, dirs, files in os.walk(PATH, topdown=False):
         for f in files:
-            # Ignores files with "." at the beginning
+            # Ignore hidden files
             if f.startswith("."):
                 continue
 
-            # Continue with all non-hidden files
             else:
-                # If there is no extension (or not listed in extensions.csv)
-                if checkExtension(f) is False:
-                    fName, fExt = f, ""
-
-                # Separates the file extension from the file name
-                else:
-                    fName, fExt = checkExtension(f)
+                # Separate filename from extension if valid extension exists
+                fName, fExt = checkExtension(f)
 
                 # Run the function to clean the filename
                 fName, fileNum = cleanFilename(fName, fileNum)
@@ -211,4 +216,7 @@ def main():
 
 
 if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+    exit()
     main()
