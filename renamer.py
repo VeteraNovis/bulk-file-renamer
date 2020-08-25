@@ -54,7 +54,8 @@ def checkRestricted(Name):
     rNames = [
         'AUX', 'PRN', 'NUL', 'CON', 'COM0', 'COM1', 'COM2', 'COM3', 'COM4',
         'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT0', 'LPT1', 'LPT2', 'LPT3',
-        'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+        'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9', '.lock', 'desktop.ini',
+        '_vti_'
     ]
 
     if Name in rNames:

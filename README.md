@@ -23,6 +23,8 @@ file or folder.
 
 ### Invalid characters
 
+* *Work in progress*
+
 ## Authors
 
 * **Callum** - *Initial Work* - [Callum-W](https://github.com/Callum-W)
