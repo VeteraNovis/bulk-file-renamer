@@ -49,7 +49,7 @@ def checkExtension(fName):
     return fName, fExt
 
 
-def checkRestricted(Name):
+def checkRestricted(fName):
     # List of restricted filenames
     rNames = [
         'AUX', 'PRN', 'NUL', 'CON', 'COM0', 'COM1', 'COM2', 'COM3', 'COM4',
@@ -58,33 +58,39 @@ def checkRestricted(Name):
         '_vti_'
     ]
 
-    if Name in rNames:
-        Name = Name + "-renamed"
+    if fName in rNames or '_vti_' in fName:
+        fName = fName + "-renamed"
 
     # Replacing or deleting restricted characters
     rChars = [['?', ''], ['*', ''], ['<', ''],
-              ['>', ''], ['|', ''], [r':', '-']]
+              ['>', ''], ['|', ''], [r':', '-'],
+              ['\"', '\''], ['\\', '.'], ['/', '.']]
     for entry in rChars:
-        Name = Name.replace(entry[0], entry[1])
+        fName = fName.replace(entry[0], entry[1])
 
-    return Name
+    return fName
 
 
-def cleanFilename(Name, Num):
+def cleanFilename(fName, fNum):
     """ This function will attempt to remove or change any restricted characters
     in a filename or directory name.  Where Num keeps track of
     """
-    Name = checkRestricted(Name)  # Fixes any invalid filenames
-    Name = Name.strip()  # Removes any whitespace from the filename
-    if Name.endswith("."):
-        Name = Name[:-1]  # Removes periods from end of filename.
+    fName = checkRestricted(fName)  # Fixes any invalid filenames
+    fName = fName.strip()  # Removes any whitespace from the filename
+
+    # Removes any periods from the end of the file name
+    while True:
+        if fName.endswith("."):
+            fName = fName[:-1]
+        else:
+            break
 
     # A check to ensure names are not renamed to be blank
-    if len(Name) < 1:
-        Name = "unnamed" + str(Num)
-        Num += 1
+    if len(fName) < 1:
+        fName = "unnamed" + str(fNum)
+        fNum += 1
 
-    return Name, Num
+    return fName, fNum
 
 
 def rename(root, oldName, newName, outputLog, fType, dupNum, logOnly):
@@ -217,7 +223,6 @@ def main():
 
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
-    exit()
+    # import doctest
+    # doctest.testmod()
     main()
