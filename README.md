@@ -17,13 +17,22 @@ Microsoft OneDrive's filename specifications.
 
 ### Invalid file or folder names
 
-The following names are not allowed. If they are encountered the program will rename them by adding "-renamed" to the
-file or folder.
+The following names are not allowed. If they are encountered the program will rename them by appending "-renamed" to the file/folder name.
 > .lock, CON, PRN, AUX, NUL, COM0 - COM9, LPT0 - LPT9, \_vti_, desktop.ini
 
 ### Invalid characters
 
-* *Work in progress*
+The following characters are restricted in Microsoft OneDrive, and so if they
+are encountered in any file/folder name, the character will either be deleted or replaced.  All trailing and leading whitespace is removed, and any trailing
+periods are also removed.
+
+> " * : < > ? / \ |
+
+### Empty files
+
+If any filenames would be empty after renaming, the program changes the name to
+"unnamedX" where X is an incremental number.  This is to ensure that two
+unnamed files in the same folder aren't both renamed to "unnamed".
 
 ## Authors
 
