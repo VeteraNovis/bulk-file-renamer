@@ -15,6 +15,69 @@ import sys
 from datetime import datetime  # For generating the logfile
 
 
+def getPath(flags):
+    """ Get starting directory for file renaming"""
+    # Get path to the location of this python script
+    workingDir = os.path.dirname(os.path.abspath(__file__))
+    print(workingDir)
+
+    # If there is no path given, set PATH to location of this file
+    if len(sys.argv) == 1 + flags:
+        PATH = workingDir
+
+    # Allow user defined path, and checks for relative paths
+    elif len(sys.argv) == 2 + flags:
+        PATH = sys.argv[1]
+
+        # Add code to convert relative path to absolute path
+        if PATH.startswith("."):
+            pass
+
+        # Removes trailing slashes
+        if PATH.endswith("/"):
+            PATH = PATH[:-1]
+
+    # If too many arguments are entered, quit the program
+    elif len(sys.argv) > 2 + flags:
+        print("\nToo many arguments. Exiting program.\n")
+        exit()
+
+    print("\nRenaming files in directory {}".format(PATH))
+
+    # Provide the option to quit the program
+    cont = str(input("CONFIRM PATH BEFORE CONTINUING... To quit press Q: "))
+    if cont.lower() == "q":
+        exit()
+
+    return PATH
+
+
+def cleanFilename(fName, fNum):
+    """ This function will attempt to remove or change any restricted characters
+    in a filename or directory name.  Where Num keeps track of
+    """
+    fName, fExt = checkExtension(fName)  # Separate filename from extension
+    fName = checkRestricted(fName)  # Fixes any invalid filenames
+    fName = fName.strip()  # Removes any whitespace from the filename
+
+    # Removes any periods from the end of the file name
+    while True:
+        if fName.endswith("."):
+            fName = fName[:-1]
+        else:
+            break
+
+    # A check to ensure names are not renamed to be blank
+    if len(fName) < 1:
+        fName = "unnamed" + str(fNum)
+        fNum += 1
+
+    # Add extension if present
+    fName = fName + fExt
+
+    return fName, fNum
+
+
 def checkExtension(fName):
     """Determine whether a given string ends with a specific file extension.
 
@@ -71,100 +134,31 @@ def checkRestricted(fName):
     return fName
 
 
-def cleanFilename(fName, fNum):
-    """ This function will attempt to remove or change any restricted characters
-    in a filename or directory name.  Where Num keeps track of
-    """
-    fName = checkRestricted(fName)  # Fixes any invalid filenames
-    fName = fName.strip()  # Removes any whitespace from the filename
-
-    # Removes any periods from the end of the file name
-    while True:
-        if fName.endswith("."):
-            fName = fName[:-1]
-        else:
-            break
-
-    # A check to ensure names are not renamed to be blank
-    if len(fName) < 1:
-        fName = "unnamed" + str(fNum)
-        fNum += 1
-
-    return fName, fNum
-
-
 def rename(root, oldName, newName, outputLog, fType, dupNum, logOnly):
-    pathToFile = root + "/"
-    oldPath, newPath = pathToFile + oldName, pathToFile + newName
-    timestamp = str(datetime.now())[:-3].replace(" ", ", ")
+    oldPath, newPath = os.path.join(root, oldName), os.path.join(root, newName)
+    date, time = str(datetime.now())[:-3].split(" ")
 
+    # if the filename has not been changed
     if oldPath == newPath:
-        outputLog.append(timestamp + ", ---, " + pathToFile.replace(",", "-")
-                         + ", {" + oldName.replace(",", "-") + "}, -->, "
-                         + "---, " + fType)
+        return False
+
+    # If the filename HAS been changed
     else:
         if os.path.exists(newPath):
             newPath = newPath + str(dupNum)
             dupNum += 1
 
-        if logOnly is True:
-            outputLog.append(timestamp + ", +++, "
-                             + pathToFile.replace(",", "-")
-                             + ", {" + oldName.replace(",", "-") + "}, -->, {"
-                             + newName.replace(",", "-") + "}, " + fType)
-        else:
+        # Rename the file
+        if logOnly is False:
             shutil.move(oldPath, newPath)
-            outputLog.append(timestamp + ", +++, "
-                             + pathToFile.replace(",", "-")
-                             + ", {" + oldName.replace(",", "-")
-                             + "}, -->, {" + newName.replace(",", "-")
-                             + "}, " + fType)
 
-    return
+        output = [date, time, root + "\\", "{" + oldName + "}",
+                  "-->", "{" + newName + "}", fType]
 
+        outputLog.append(",".join(output))
+        print("{} {} was renamed to {}".format(fType, output[3], output[5]))
 
-def getPath():
-    # Stores the absolute path name to the specified directory.
-    shift = 0
-    logOnly = True
-
-    # Determine whether files will be renamed, or just listed in the logfile.
-    if sys.argv[-1] == "rename":
-        logOnly = False
-        shift = 1
-
-    if len(sys.argv) == 1 + shift:
-        PATH = os.path.dirname(os.path.abspath(__file__))
-
-    # Allow user defined path, and checks for relative paths
-    elif len(sys.argv) == 2 + shift:
-        PATH = sys.argv[1]
-
-        if PATH.startswith("."):
-            print("Relative paths will not work.  Please use full pathnames")
-            exit()
-
-        if PATH.endswith("/"):
-            PATH = PATH[:-1]
-
-    # If too many arguments are entered, quit the program
-    else:
-        print("Multiple arguments found, expecting single argument.\n")
-        exit()
-
-    if logOnly is True:
-        print("\nLOG ONLY ENABLED")
-        print("Renaming files in directory {}".format(PATH))
-
-    else:
-        print("\nRenaming files in directory {}".format(PATH))
-
-    # Provide the option to quit the program
-    cont = str(input("CONFIRM PATH BEFORE CONTINUING... To quit press Q: "))
-    if cont.lower() == "q":
-        exit()
-
-    return PATH, logOnly
+        return True
 
 
 def main():
@@ -173,53 +167,68 @@ def main():
     """
 
     # Initialising variables
-    PATH, logOnly = getPath()
-    fileNum = 1
-    dupNum = 1
-    renamed = False
-    outputLog = []
+    logMode = True  # Set to log mode by default
+    fileNum = 1  # Counter for renaming blank filenames
+    dupNum = 1  # Counter for renaming duplicate filenames
+    renamed = False  # Check whether any files were renamed
+    outLog = []  # List to contain each line of the output log file
+    flags = 0  # Number of input arguments
+    excludePrefix = ('.', '__')
+
+    # Setup runtime arguments
+    argRename = ["rename", "-r"]  # Turn off the default log only mode
+
+    # Set whether files are renamed or not
+    if [flag for flag in sys.argv if flag in argRename]:
+        logMode = False
+        flags = 1
+    else:
+        print("\n---- LOG ONLY ENABLED ----\n")
+
+    # Get path to directory
+    PATH = getPath(flags)
+
+    # ISSUE - The program currently does not rename files and folders with
+    # a leading period (hidden folders and files), however it will still
+    # rename files or folders within hidden folders
 
     for root, dirs, files in os.walk(PATH, topdown=False):
+        # Don't rename any hidden files or folders
+        files = [f for f in files if not f.startswith(excludePrefix)]
+        dirs = [dr for dr in dirs if not dr.startswith(excludePrefix)]
+
         for f in files:
-            # Ignore hidden files
-            if f.startswith("."):
-                continue
+            fName, fileNum = cleanFilename(f, fileNum)
 
-            else:
-                # Separate filename from extension if valid extension exists
-                fName, fExt = checkExtension(f)
-
-                # Run the function to clean the filename
-                fName, fileNum = cleanFilename(fName, fileNum)
-
-                # Recombine the file name and extension
-                fName = fName + fExt
-
-                # Logs output, changes name if required
-                rename(root, f, fName, outputLog, "file", dupNum, logOnly)
+            # Rename file and check when a file is renamed
+            if rename(root, f, fName, outLog, "file", dupNum, logMode):
+                renamed = True
 
         # Cycle through any directories in the current folder and rename
         for dr in dirs:
             dName, fileNum = cleanFilename(dr, fileNum)
-            rename(root, dr, dName, outputLog, "dir", dupNum, logOnly)
 
-    # Create or open logfile.csv and store the output of the script
-    with open("logfile.csv", "w") as logfile:
-        for line in outputLog:
-            logfile.write(line + "\n")
-
-    # Check through the logfile for the files that were changed
-    with open("logfile.csv", "r") as logfile:
-        output = logfile.readlines()
-        for line in output:
-            line = line.split(", ")
-            if line[2] == "+++":
-                print("{} {} was renamed to {}".format(line[7].strip(),
-                                                       line[4], line[6]))
+            # Runs rename function and checks wheter a file was renamed
+            if rename(root, dr, dName, outLog, "dr", dupNum, logMode):
                 renamed = True
 
-        if renamed is False:
-            print("No files or folders were renamed\n")
+    # Try to open (or overwrite) log file
+    try:
+        with open("logfile.csv", "w") as logfile:
+            for line in outLog:
+                logfile.write(line + "\n")
+    # If file is already open, throw warning and save a copy of the logfile
+    except PermissionError:
+        print("\n---- WARNING - Cannot access logfile.csv ----\n"
+              + "--- Please ensure logfile.csv is not open ---\n"
+              + "----- Logfile saved as logfile_copy.csv -----\n")
+
+        with open("logfile_copy.csv", "w") as logfile:
+            for line in outLog:
+                logfile.write(line + "\n")
+
+    if not renamed:
+        print("No files or folders were renamed\n")
 
 
 if __name__ == "__main__":
